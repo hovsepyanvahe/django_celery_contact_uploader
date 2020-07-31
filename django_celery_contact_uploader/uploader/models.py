@@ -9,3 +9,11 @@ class Contact(models.Model):
 
     def __str__(self):
         return '{} - ({}) - {}'.format(self.name, self.phone, self.email)
+
+
+class File(models.Model):
+    name = models.CharField(max_length=100)
+    file = models.FileField(upload_to='files/')
+
+    def __str__(self):
+        return self.name
