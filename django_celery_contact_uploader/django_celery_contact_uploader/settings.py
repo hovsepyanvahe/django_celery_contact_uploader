@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'phone_field',
+    'storages',
     'uploader',
 ]
 
