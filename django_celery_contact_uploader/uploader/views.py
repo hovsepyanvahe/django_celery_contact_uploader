@@ -3,7 +3,8 @@ from django.views import View
 from .models import TemporaryBlockedContact, File
 from django.db.models import Q
 import pandas as pd
-from .tasks import temporary_block_contact, process_contacts
+from .tasks import temporary_block_contact,unblock_contacts, process_contacts
+from datetime import datetime, timedelta
 
 
 class Home(View):
@@ -32,6 +33,8 @@ class Home(View):
                 task = process_contacts.delay(list_of_valid_contacts)
                 context['task_id'] = task.task_id
                 temporary_block_contact.delay(list_of_valid_contacts)
+                after_3_minutes = datetime.utcnow() + timedelta(minutes=1)
+                unblock_contacts.apply_async([list_of_valid_contacts], eta=after_3_minutes)
 
                 file = File()
                 file.name = excel_file.name
