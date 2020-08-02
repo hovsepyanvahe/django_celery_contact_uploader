@@ -29,9 +29,9 @@ class Home(View):
                     if self.is_contact_valid(cont) and not self.is_temporary_blocked(cont):
                         list_of_valid_contacts.append(cont)
 
-                temporary_block_contact.delay(list_of_valid_contacts)
                 task = process_contacts.delay(list_of_valid_contacts)
                 context['task_id'] = task.task_id
+                temporary_block_contact.delay(list_of_valid_contacts)
 
                 file = File()
                 file.name = excel_file.name
