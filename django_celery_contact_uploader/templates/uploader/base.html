@@ -23,8 +23,18 @@
 </head>
 
 <body>
-
+{% load static %}
 {% block content %}{% endblock content %}
+
+<script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+{% if task_id %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var progressUrl = "{% url 'celery_progress:task_status' task_id %}";
+            CeleryProgressBar.initProgressBar(progressUrl);
+        });
+    </script>
+{% endif %}
 
 </body>
 

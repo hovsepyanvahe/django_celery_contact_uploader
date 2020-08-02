@@ -1,14 +1,15 @@
 from django.shortcuts import render
 from django.views import View
-from .models import Contact, File
+from .models import TemporaryBlockedContact, File
+from django.db.models import Q
 import pandas as pd
+from .tasks import process_contacts
 
 
 class Home(View):
 
     def get(self, request):
-        context = {'one': 'one'}
-        return render(request, 'uploader/home.html', context)
+        return render(request, 'uploader/home.html')
 
     def post(self, request):
         context = {}
@@ -20,21 +21,43 @@ class Home(View):
             elif not excel_file.name.endswith('xlsx'):
                 context['error'] = 'File format should be xlsx'
             else:
+                list_of_valid_contacts = []
+                contacts_file = pd.read_excel(excel_file, dtype=str)
+                for index, cont in contacts_file.iterrows():
+                    cont = cont.to_dict()
+
+                    if self.is_contact_valid(cont) and not self.is_temporary_blocked(cont):
+                        list_of_valid_contacts.append(cont)
+
+                task = process_contacts.delay(list_of_valid_contacts)
+                context['task_id'] = task.task_id
+
                 file = File()
                 file.name = excel_file.name
                 file.file = excel_file
                 file.save()
 
-                contacts_file = pd.read_excel(file.file, dtype=str)
-                for index, cont in contacts_file.iterrows():
-                    cont = cont.to_dict()
-                    # This check is for NaN(when phone number is missing)
-                    if cont.get('Phone Number') == cont.get('Phone Number'):
-                        contact = Contact()
-                        contact.name = cont.get('Name')
-                        contact.phone = cont.get('Phone Number')
-                        contact.email = cont.get('Email Address')
-                        contact.save()
-
-                context['status'] = 'Success'
         return render(request, 'uploader/home.html', context)
+
+    def is_contact_valid(self, contact_dict):
+        contact_name = contact_dict.get('Name')
+        contact_email = contact_dict.get('Email Address')
+        contact_phone = contact_dict.get('Phone Number')
+
+        # This check is for NaN(when phone number is missing)
+        if contact_phone != contact_phone:
+            return False
+        elif not contact_name and not contact_email:
+            return False
+
+        return True
+
+    def is_temporary_blocked(self, contact_dict):
+        contact_email = contact_dict.get('Email Address')
+        contact_phone = contact_dict.get('Phone Number')
+        contact = TemporaryBlockedContact.objects.filter(Q(email=contact_email) | Q(phone=contact_phone))
+
+        if contact.exists():
+            return True
+
+        return False

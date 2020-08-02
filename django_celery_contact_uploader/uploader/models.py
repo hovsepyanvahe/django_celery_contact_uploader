@@ -11,6 +11,14 @@ class Contact(models.Model):
         return '{} - ({}) - {}'.format(self.name, self.phone, self.email)
 
 
+class TemporaryBlockedContact(models.Model):
+    phone = PhoneField()
+    email = models.EmailField(max_length=100)
+
+    def __str__(self):
+        return '{} - {}'.format(self.email, self.phone)
+
+
 class File(models.Model):
     name = models.CharField(max_length=100)
     file = models.FileField(upload_to='files/')
