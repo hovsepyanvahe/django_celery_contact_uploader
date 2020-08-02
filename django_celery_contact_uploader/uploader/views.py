@@ -33,7 +33,7 @@ class Home(View):
                 task = process_contacts.delay(list_of_valid_contacts)
                 context['task_id'] = task.task_id
                 temporary_block_contact.delay(list_of_valid_contacts)
-                after_3_minutes = datetime.utcnow() + timedelta(minutes=1)
+                after_3_minutes = datetime.utcnow() + timedelta(minutes=3)
                 unblock_contacts.apply_async([list_of_valid_contacts], eta=after_3_minutes)
 
                 file = File()
